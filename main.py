@@ -14,7 +14,7 @@ ballToken = None
 SYMBOL_REGEX_USA = "[￥¥]([a-zA-Z]{1,4})"
 SYMBOL_REGEX_A = "[￥¥]((SH[0-9]{6})|(SZ[0-9]{6}))"
 SYMBOL_REGEX_HK = "[￥¥]0([0-3][0-9]{3})"
-SYMBOL_REGEX_NAME = "[￥¥]([^\w]\d?[\u4e00-\u9fa5]*\w*(_\d)?)\s?"
+SYMBOL_REGEX_NAME = "[￥¥]((?![a-zA-Z]])\d?[\u4e00-\u9fa5]*[a-zA-Z]*(_\d)?)\s?"
 
 
 # bot = telegram.Bot(token=tgToken)

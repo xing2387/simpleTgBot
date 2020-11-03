@@ -6,6 +6,7 @@ import json
 import getopt
 import telegram
 import stock.pysnowball.pysnowball as ball
+from functools import reduce
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 tgToken = None
@@ -13,7 +14,7 @@ ballToken = None
 SYMBOL_REGEX_USA = "[￥¥]([a-zA-Z]{1,4})"
 SYMBOL_REGEX_A = "[￥¥]((SH[0-9]{6})|(SZ[0-9]{6}))"
 SYMBOL_REGEX_HK = "[￥¥]0([0-3][0-9]{3})"
-SYMBOL_REGEX_NAME = "[￥¥](\d?[\u4e00-\u9fa5]*\w*(_\d)?)\s?"
+SYMBOL_REGEX_NAME = "[￥¥]([^\w]\d?[\u4e00-\u9fa5]*\w*(_\d)?)\s?"
 
 
 # bot = telegram.Bot(token=tgToken)
@@ -65,6 +66,21 @@ def formatBigDecimal(num):
     else:
         return str(num)
 
+def distinctSymbol(slist, x):
+    repeat = None
+    if type(slist) is not list:
+        slist = [slist]
+    for s in slist:
+        if (x in s) or (s in x):
+            repeat = s
+            break
+    if repeat == None:
+        slist.append(x)
+    elif(len(x) > len(repeat)):
+        slist.remove(repeat)
+        slist.append(x)
+    return slist
+
 def handleSymbol(update, context):
 
     text = ""
@@ -76,6 +92,9 @@ def handleSymbol(update, context):
     symbols += list(map(lambda x:x[0], re.findall(SYMBOL_REGEX_NAME, text)))
     symbols += list(re.findall(SYMBOL_REGEX_USA, text))
     if len(symbols) > 0:
+        if len(symbols) > 1:
+            symbols = reduce(distinctSymbol, symbols)
+        print("handleSymbol " + str(symbols))
         context.bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
         ball.set_token(ballToken)
         for symbol in symbols:
@@ -83,12 +102,10 @@ def handleSymbol(update, context):
             #             text=ball.searchCode(symbol), parse_mode=telegram.ParseMode.MARKDOWN
             #         )
             index = 1
-            print("symbol " + str(symbol) +", index "+ str(index) +" _ in symbol " + str( "_" in symbol))
             if "_" in symbol:
                 symbolAndIndex = symbol.split("_")
                 symbol = symbolAndIndex[0]
                 index = int(symbolAndIndex[1])
-            print("symbol " + str(symbol) +", index "+ str(index))
             code, name, stockNameList = searchForNameAndCode(symbol, index)
             if code != None:
                 resultJson = ball.quotec(code)

@@ -11,10 +11,11 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 tgToken = None
 ballToken = None
-SYMBOL_REGEX_USA = "[￥¥]([a-zA-Z]{1,4})"
-SYMBOL_REGEX_A = "[￥¥]((SH[0-9]{6})|(SZ[0-9]{6}))"
-SYMBOL_REGEX_HK = "[￥¥]0([0-3][0-9]{3})"
-SYMBOL_REGEX_NAME = "[￥¥]((?![a-zA-Z]])\d?[\u4e00-\u9fa5]*[a-zA-Z]*(_\d)?)\s?"
+SYMBOL_REGEX_ALL = "[￥¥]([^\s]{1,10})"
+# SYMBOL_REGEX_USA = "[￥¥]([a-zA-Z]{1,4})"
+# SYMBOL_REGEX_A = "[￥¥]((SH[0-9]{6})|(SZ[0-9]{6}))"
+# SYMBOL_REGEX_HK = "[￥¥]0([0-3][0-9]{3})"
+# SYMBOL_REGEX_NAME = "[￥¥]((?![a-zA-Z]])\d?[\u4e00-\u9fa5]*[a-zA-Z]*(_\d)?)\s?"
 
 
 # bot = telegram.Bot(token=tgToken)
@@ -28,7 +29,7 @@ def stockPrice(update, context):
     ball.set_token(ballToken)
     text = update.message.text
     stockCode = text.replace("/stockPrice", "", 1).strip()
-    result = ball.quotec(stockCode)
+    result = ball.quotec2(stockCode)
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text=result)
 
@@ -86,11 +87,8 @@ def handleSymbol(update, context):
     text = ""
     if update.message != None:
         text = update.message.text
-    
-    symbols = []
-    symbols += list(map(lambda x:x[0], re.findall(SYMBOL_REGEX_A, text)))
-    symbols += list(map(lambda x:x[0], re.findall(SYMBOL_REGEX_NAME, text)))
-    symbols += list(re.findall(SYMBOL_REGEX_USA, text))
+
+    symbols = list(re.findall(SYMBOL_REGEX_ALL, text))
     if len(symbols) > 0:
         if len(symbols) > 1:
             symbols = reduce(distinctSymbol, symbols)
@@ -108,8 +106,8 @@ def handleSymbol(update, context):
                 index = int(symbolAndIndex[1])
             code, name, stockNameList = searchForNameAndCode(symbol, index)
             if code != None:
-                resultJson = ball.quotec(code)
-                if "data" in resultJson:
+                resultJson = ball.quotec2(code)
+                if ("data" in resultJson) and ("quote" in resultJson["data"]):
                     stockNames = ""
                     if len(stockNameList) > 1:
                         for stockName in stockNameList:
@@ -117,7 +115,7 @@ def handleSymbol(update, context):
                             stockNames += str(stockName) + " "
                     if len(stockNames) > 1:
                         stockNames = stockNames + "\n" + "-------------" + "\n"
-                    resultJson = resultJson["data"][0]
+                    resultJson = resultJson["data"]["quote"]
                     print(resultJson)
                     price = "当前股价 " + (str(resultJson["current"]) if resultJson["current"] else "无" )
                     percent = ", 涨跌 " + (str(resultJson["percent"]) + "% " + str(resultJson["chg"]) \
@@ -153,8 +151,8 @@ def main(argv):
 
     # start_handler = CommandHandler('start', start)
     # dispatcher.add_handler(start_handler)
-    # stock_handler = CommandHandler('stockPrice', stockPrice)
-    # dispatcher.add_handler(stock_handler)
+    stock_handler = CommandHandler('stockPrice', stockPrice)
+    dispatcher.add_handler(stock_handler)
     stock_handler = CommandHandler('turnover', turnover)
     dispatcher.add_handler(stock_handler)
 

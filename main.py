@@ -90,15 +90,12 @@ def handleSymbol(update, context):
 
     symbols = list(re.findall(SYMBOL_REGEX_ALL, text))
     if len(symbols) > 0:
-        if len(symbols) > 1:
-            symbols = reduce(distinctSymbol, symbols)
+        # if len(symbols) > 1:
+        #     symbols = reduce(distinctSymbol, symbols)
         print("handleSymbol " + str(symbols))
         context.bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
         ball.set_token(ballToken)
         for symbol in symbols:
-            # update.message.reply_text(
-            #             text=ball.searchCode(symbol), parse_mode=telegram.ParseMode.MARKDOWN
-            #         )
             index = 1
             if "_" in symbol:
                 symbolAndIndex = symbol.split("_")
@@ -123,11 +120,9 @@ def handleSymbol(update, context):
                     amount = formatBigDecimal(float(resultJson["amount"])) + "元" if resultJson["amount"] else None
                     volume = formatBigDecimal(float(resultJson["volume"])/100) + "手 " if resultJson["volume"] else None
                     turnover_rate = ", 换手率 " + str(resultJson["turnover_rate"]) + "%" if resultJson["turnover_rate"] else ""
-                    amount = ", 成交量 " + volume + amount if (volume and amount) else ""
+                    amount = (", 成交量 " + volume + amount) if (volume and amount) else ""
                     resultText = stockNames + name + " " + str(code) + " " + price + percent + amount + turnover_rate
-                    update.message.reply_text(
-                        text=resultText, parse_mode=telegram.ParseMode.MARKDOWN
-                    )
+                    update.message.reply_text(text=resultText, parse_mode=telegram.ParseMode.MARKDOWN)
 
 def main(argv):
     global tgToken
